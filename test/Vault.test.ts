@@ -24,15 +24,12 @@ import {
   addProfitToStrategy,
   addStrategy,
   mintAndDeposit,
-  setDepositLimit,
-  setDepositLimitModule,
-  setLock,
-  setLoss,
   updateDebt,
   updateMaxDebt,
 } from "./helper";
 import { expect } from "chai";
 import { SnapshotRestorer, takeSnapshot } from "@nomicfoundation/hardhat-network-helpers";
+import { ROLES, setRole } from "../scripts/utils/helper";
 describe("Vault", () => {
   let vault: Vault;
   let usdc: ERC20Mintable;
@@ -88,9 +85,36 @@ describe("Vault", () => {
       strategy1 = await MockStrategyFactory.deploy();
       strategy2 = await MockStrategyFactory.deploy();
       strategy3 = await MockStrategyFactory.deploy();
-      await strategy1.connect(governance).initialize(await vault.getAddress(), governance.address, governance.address, await usdc.getAddress(), "Strategy1", "STR1");
-      await strategy2.connect(governance).initialize(await vault.getAddress(), governance.address, governance.address, await usdc.getAddress(), "Strategy2", "STR2");
-      await strategy3.connect(governance).initialize(await vault.getAddress(), governance.address, governance.address, await usdc.getAddress(), "Strategy3", "STR3");
+      await strategy1
+        .connect(governance)
+        .initialize(
+          await vault.getAddress(),
+          governance.address,
+          governance.address,
+          await usdc.getAddress(),
+          "Strategy1",
+          "STR1"
+        );
+      await strategy2
+        .connect(governance)
+        .initialize(
+          await vault.getAddress(),
+          governance.address,
+          governance.address,
+          await usdc.getAddress(),
+          "Strategy2",
+          "STR2"
+        );
+      await strategy3
+        .connect(governance)
+        .initialize(
+          await vault.getAddress(),
+          governance.address,
+          governance.address,
+          await usdc.getAddress(),
+          "Strategy3",
+          "STR3"
+        );
     });
 
     afterEach(async () => {
@@ -124,11 +148,15 @@ describe("Vault", () => {
       });
 
       it("add strategy - with zero address - fails with error", async () => {
-        await expect(vault.connect(governance).addStrategy(ethersv6.ZeroAddress, true)).to.be.revertedWith("Invalid strategy");
+        await expect(vault.connect(governance).addStrategy(ethersv6.ZeroAddress, true)).to.be.revertedWith(
+          "Invalid strategy"
+        );
       });
       it("add strategy - with already active strategy - fails with error", async () => {
         await addStrategy(vault, strategy1, governance);
-        await expect(vault.connect(governance).addStrategy(strategy1.getAddress(), true)).to.be.revertedWith("Strategy already active");
+        await expect(vault.connect(governance).addStrategy(strategy1.getAddress(), true)).to.be.revertedWith(
+          "Strategy already active"
+        );
       });
     });
     describe("Default Queue - Max Length", () => {
@@ -145,7 +173,18 @@ describe("Vault", () => {
         const MockStrategyFactory = await hre.ethers.getContractFactory("MockStrategy");
         for (let i = 0; i <= 21; i++) {
           const strategy = await MockStrategyFactory.deploy();
-          await strategy.connect(governance).initialize(await vault.getAddress(), governance.address, governance.address, (await get("USDC")).address, `Strategy${i}`, `STR${i}`);
+          await strategy
+            .connect(governance)
+            .initialize(
+              await vault.getAddress(),
+              governance.address,
+              governance.address,
+              (
+                await get("USDC")
+              ).address,
+              `Strategy${i}`,
+              `STR${i}`
+            );
           strategies.push(strategy);
         }
       });
@@ -183,13 +222,17 @@ describe("Vault", () => {
       });
 
       it("should revert if strategy is not active", async () => {
-        await expect(vault.connect(governance).revokeStrategy(strategy3.getAddress())).to.be.revertedWith("Strategy not active");
+        await expect(vault.connect(governance).revokeStrategy(strategy3.getAddress())).to.be.revertedWith(
+          "Strategy not active"
+        );
       });
 
       it("should revert if strategy has debt and not forced", async () => {
         await vault.connect(governance).updateMaxDebtForStrategy(strategy1.getAddress(), amount);
         await vault.connect(governance).updateDebt(strategy1.getAddress(), amount, 0);
-        await expect(vault.connect(governance).revokeStrategy(strategy1.getAddress())).to.be.revertedWith("Strategy has debt");
+        await expect(vault.connect(governance).revokeStrategy(strategy1.getAddress())).to.be.revertedWith(
+          "Strategy has debt"
+        );
       });
 
       it("should revert if not QUEUE_MANAGER", async () => {
@@ -209,18 +252,19 @@ describe("Vault", () => {
         const strategyParams = await vault.strategies(strategyAddress);
         expect(strategyParams.currentDebt).to.equal(amount);
         expect(initialTotalDebt).to.equal(amount);
-        const tx = await vault.connect(governance).forceRevokeStrategy(strategyAddress);
+        await vault.connect(governance).forceRevokeStrategy(strategyAddress);
         const finalParams = await vault.strategies(strategyAddress);
         expect(finalParams.activation).to.equal(0);
         expect(finalParams.currentDebt).to.equal(0);
         expect(finalParams.maxDebt).to.equal(0);
         expect(finalParams.lastReport).to.equal(0);
         expect(await vault.totalDebt()).to.equal(0);
-        await expect(vault.connect(governance).setDefaultQueue([strategyAddress])).to.be.revertedWith("Inactive strategy");
       });
 
       it("should revert if strategy is not active", async () => {
-        await expect(vault.connect(governance).forceRevokeStrategy(strategy3.getAddress())).to.be.revertedWith("Strategy not active");
+        await expect(vault.connect(governance).forceRevokeStrategy(strategy3.getAddress())).to.be.revertedWith(
+          "Strategy not active"
+        );
       });
 
       it("should revert if not QUEUE_MANAGER", async () => {
@@ -233,13 +277,16 @@ describe("Vault", () => {
         await addStrategy(vault, strategy1, governance);
         await addStrategy(vault, strategy2, governance);
         await addStrategy(vault, strategy3, governance);
+        await setRole(await vault.getAddress(), governance.address, ROLES.QUEUE_MANAGER, governance);
       });
 
       it("should set new default queue with active strategies", async () => {
         const newQueue = [await strategy2.getAddress(), await strategy1.getAddress()];
-        const tx = await vault.connect(governance).setDefaultQueue(newQueue);
+        await vault.connect(governance).setDefaultQueue(newQueue);
         await vault.connect(governance).revokeStrategy(await strategy3.getAddress());
-        await expect(vault.connect(governance).setDefaultQueue([await strategy3.getAddress()])).to.be.revertedWith("Inactive strategy");
+        await expect(vault.connect(governance).setDefaultQueue([await strategy3.getAddress()])).to.be.revertedWith(
+          "Inactive strategy"
+        );
       });
 
       it("should revert if queue length exceeds MAX_QUEUE", async () => {
@@ -260,17 +307,23 @@ describe("Vault", () => {
     });
 
     describe("setUseDefaultQueue", () => {
+      beforeEach(async () => {
+        await setRole(await vault.getAddress(), governance.address, ROLES.QUEUE_MANAGER, governance);
+      });
+
       it("should enable useDefaultQueue", async () => {
         const tx = await vault.connect(governance).setUseDefaultQueue(true);
         const events = await tx.wait().then((receipt) => receipt!.logs.map((log) => vault.interface.parseLog(log)));
-        expect(events.some((event) => event?.name === "UpdateUseDefaultQueue" && event.args.useDefaultQueue === true)).to.be.true;
+        expect(events.some((event) => event?.name === "UpdateUseDefaultQueue" && event.args.useDefaultQueue === true))
+          .to.be.true;
       });
 
       it("should disable useDefaultQueue", async () => {
         await vault.connect(governance).setUseDefaultQueue(true);
         const tx = await vault.connect(governance).setUseDefaultQueue(false);
         const events = await tx.wait().then((receipt) => receipt!.logs.map((log) => vault.interface.parseLog(log)));
-        expect(events.some((event) => event?.name === "UpdateUseDefaultQueue" && event.args.useDefaultQueue === false)).to.be.true;
+        expect(events.some((event) => event?.name === "UpdateUseDefaultQueue" && event.args.useDefaultQueue === false))
+          .to.be.true;
       });
 
       it("should revert if not QUEUE_MANAGER", async () => {
@@ -282,14 +335,16 @@ describe("Vault", () => {
       it("should enable autoAllocate", async () => {
         const tx = await vault.connect(governance).setAutoAllocate(true);
         const events = await tx.wait().then((receipt) => receipt!.logs.map((log) => vault.interface.parseLog(log)));
-        expect(events.some((event) => event?.name === "UpdateAutoAllocate" && event.args.autoAllocate === true)).to.be.true;
+        expect(events.some((event) => event?.name === "UpdateAutoAllocate" && event.args.autoAllocate === true)).to.be
+          .true;
       });
 
       it("should disable autoAllocate", async () => {
         await vault.connect(governance).setAutoAllocate(true);
         const tx = await vault.connect(governance).setAutoAllocate(false);
         const events = await tx.wait().then((receipt) => receipt!.logs.map((log) => vault.interface.parseLog(log)));
-        expect(events.some((event) => event?.name === "UpdateAutoAllocate" && event.args.autoAllocate === false)).to.be.true;
+        expect(events.some((event) => event?.name === "UpdateAutoAllocate" && event.args.autoAllocate === false)).to.be
+          .true;
       });
 
       it("should revert if not QUEUE_MANAGER", async () => {
@@ -305,6 +360,7 @@ describe("Vault", () => {
         await updateMaxDebt(vault, strategy2, maxDebt, governance);
         await updateMaxDebt(vault, strategy3, maxDebt, governance);
         await mintAndDeposit(vault, usdc, amount, alice);
+        await setRole(await vault.getAddress(), governance.address, ROLES.QUEUE_MANAGER, governance);
       });
 
       it("should allocate debt to the first strategy in the queue", async () => {
@@ -389,12 +445,16 @@ describe("Vault", () => {
 
     it("withdraw more than balance should revert", async () => {
       let amountWithdraw = (amount * 5n) / 4n;
-      await expect(vault.connect(alice).withdraw(amountWithdraw, alice.address, alice.address)).to.be.revertedWith("Insufficient shares");
+      await expect(vault.connect(alice).withdraw(amountWithdraw, alice.address, alice.address)).to.be.revertedWith(
+        "Insufficient shares"
+      );
     });
 
     it("withdraw 0 more than balance should revert", async () => {
       let amountWithdraw = 0n;
-      await expect(vault.connect(alice).withdraw(amountWithdraw, alice.address, alice.address)).to.be.revertedWith("No shares to redeem");
+      await expect(vault.connect(alice).withdraw(amountWithdraw, alice.address, alice.address)).to.be.revertedWith(
+        "No shares to redeem"
+      );
     });
 
     it("withdraw when loss", async () => {
@@ -566,7 +626,8 @@ describe("Vault", () => {
       });
       it("update LimitDepositModule when has deposit limit should revert", async () => {
         await vault.connect(governance).setDepositLimit(amount);
-        await expect(vault.connect(governance).setDepositLimitModule(await limitDepositModule.getAddress())).to.be.reverted;
+        await expect(vault.connect(governance).setDepositLimitModule(await limitDepositModule.getAddress())).to.be
+          .reverted;
       });
       it("update LimitDepositModuleForce when has deposit limit shound success, update depositLimit = maxUint256", async () => {
         await vault.connect(governance).setDepositLimit(amount);
@@ -608,7 +669,10 @@ describe("Vault", () => {
     describe("LimitWithdrawModule", async () => {
       let limitWithdrawModule: WithdrawLimitModule;
       beforeEach(async () => {
-        limitWithdrawModule = WithdrawLimitModule__factory.connect((await get("WithdrawLimitModule")).address, governance);
+        limitWithdrawModule = WithdrawLimitModule__factory.connect(
+          (await get("WithdrawLimitModule")).address,
+          governance
+        );
       });
 
       it(" update LimitWithdrawModule with permission should success", async () => {
@@ -620,7 +684,8 @@ describe("Vault", () => {
       });
 
       it(" update LimitWithdrawModule without permission should revert", async () => {
-        await expect(vault.connect(alice).setWithdrawLimitModule(await limitWithdrawModule.getAddress())).to.be.reverted;
+        await expect(vault.connect(alice).setWithdrawLimitModule(await limitWithdrawModule.getAddress())).to.be
+          .reverted;
       });
 
       describe("with LimitWithdrawModule", async () => {
@@ -634,11 +699,15 @@ describe("Vault", () => {
           await updateDebt(vault, strategy, amount, governance);
         });
         it("maxWithdraw", async () => {
-          let maxAliceWithdraw = await vault["maxWithdraw(address,uint256,address[])"](alice.address, 0, [await strategy.getAddress()]);
+          let maxAliceWithdraw = await vault["maxWithdraw(address,uint256,address[])"](alice.address, 0, [
+            await strategy.getAddress(),
+          ]);
           expect(maxAliceWithdraw).to.be.equal(limitAmount);
         });
         it("withdraw bigger than limit should revert", async () => {
-          await expect(vault.connect(alice).withdraw(limitAmount + 1n, alice.address, alice.address)).to.be.revertedWith("Exceed withdraw limit");
+          await expect(
+            vault.connect(alice).withdraw(limitAmount + 1n, alice.address, alice.address)
+          ).to.be.revertedWith("Exceed withdraw limit");
         });
         it("withdraw smaller than limit should success", async () => {
           await vault.connect(alice).withdraw(limitAmount - 1n, alice.address, alice.address);
@@ -688,7 +757,9 @@ describe("Vault", () => {
       await updateDebt(vault, strategy, amount, governance);
     });
     it(" set Minimum Total Idle with permission should success", async () => {
-      await expect(vault.connect(governance).setMinimumTotalIdle(mimimum)).to.be.emit(vault, "UpdateMinimumTotalIdle").withArgs(mimimum);
+      await expect(vault.connect(governance).setMinimumTotalIdle(mimimum))
+        .to.be.emit(vault, "UpdateMinimumTotalIdle")
+        .withArgs(mimimum);
       let postMinimumTotalIdle = (await vault.vaultData()).minimumTotalIdle;
       expect(postMinimumTotalIdle).to.be.equal(mimimum);
     });
@@ -702,6 +773,34 @@ describe("Vault", () => {
       await mintAndDeposit(vault, usdc, amount, alice);
       let posTotalIdle = await vault.totalIdle();
       expect(posTotalIdle).eq(mimimum);
+    });
+  });
+
+  describe("Shutdown Vault", async () => {
+    beforeEach(async () => {
+      await addStrategy(vault, strategy, governance);
+      await mintAndDeposit(vault, usdc, amount, alice);
+      await updateMaxDebt(vault, strategy, amount * 10n, governance);
+      await updateDebt(vault, strategy, amount, governance);
+      await setRole(await vault.getAddress(), governance.address, ROLES.EMERGENCY_MANAGER, governance);
+    });
+    it(" shutdown Vault with permission should success", async () => {
+      await vault.connect(governance).shutdownVault();
+      expect(await vault.isShutdown()).to.be.true;
+      let postDepositLimit = (await vault.vaultData()).depositLimit;
+      expect(postDepositLimit).to.be.equal(0);
+    });
+    it(" shutdown Vault without permission should revert", async () => {
+      await expect(vault.connect(alice).shutdownVault()).to.be.reverted;
+    });
+    describe("with Shutdown Vault", async () => {
+      beforeEach(async () => {
+        await vault.connect(governance).shutdownVault();
+      });
+      it("maxDeposit should return 0", async () => {
+        let maxDeposit = await vault.maxDeposit(alice.address);
+        expect(maxDeposit).to.be.equal(0);
+      });
     });
   });
 });

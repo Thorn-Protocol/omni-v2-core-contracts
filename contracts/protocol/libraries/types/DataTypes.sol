@@ -34,5 +34,7 @@ library DataTypes {
         address feeRecipient;
         uint256 managementFee;
         uint256 lastTimeTakeManagementFee;
+        // shutdown
+        bool isShutdown;
     }
 }

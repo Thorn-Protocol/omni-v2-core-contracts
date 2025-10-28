@@ -6,7 +6,7 @@ export const ROLES = {
   ADD_STRATEGY_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_ADD_STRATEGY_MANAGER")),
   REVOKE_STRATEGY_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_REVOKE_STRATEGY_MANAGER")),
   ACCOUNTANT_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_ACCOUNTANT_MANAGER")),
-  QUEUE_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_ACCOUNTANT_MANAGER")),
+  QUEUE_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_QUEUE_MANAGER")),
   REPORTING_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_REPORTING_MANAGER")),
   DEBT_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_DEBT_MANAGER")),
   MAX_DEBT_MANAGER: ethers.keccak256(ethers.toUtf8Bytes("ROLE_MAX_DEBT_MANAGER")),
@@ -56,12 +56,20 @@ export async function addStrategy(address: string, strategy: string, signer: eth
   console.log(`Added strategy tx: ${receipt!.hash}`);
 }
 
-export async function setRole(vaultAddress: string, receiver: string, role: string, signer: ethers.Signer) {
+export async function setRole(
+  vaultAddress: string,
+  receiver: string,
+  role: string,
+  signer: ethers.Signer,
+  log: boolean = false
+) {
   const vault = Vault__factory.connect(vaultAddress, signer);
   let hasRoleGov = await vault.hasRole(ROLES.GOVERNANCE_MANAGER, receiver);
   let hasRole = await vault.hasRole(role, receiver);
   if (hasRole) {
-    console.log("receiver has role ");
+    if (log) {
+      console.log("receiver has role ");
+    }
     return;
   }
   if (!hasRoleGov) {
@@ -69,7 +77,9 @@ export async function setRole(vaultAddress: string, receiver: string, role: stri
   }
   let tx = await vault.grantRole(role, receiver);
   let receipt = await tx.wait();
-  console.log(`Set role tx: ${receipt!.hash}`);
+  if (log) {
+    console.log(`Set role tx: ${receipt!.hash}`);
+  }
 }
 
 export async function setMaxDebt(vaultAddress: string, strategy: string, amount: bigint, signer: ethers.Signer) {

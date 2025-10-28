@@ -208,6 +208,10 @@ library DebtLogic {
             "Inactive strategy"
         );
 
+        if (vault.isShutdown) {
+            targetDebt = 0;
+        }
+
         uint256 currentDebt = vault.strategies[strategy].currentDebt;
         require(targetDebt != currentDebt, "No debt change");
 

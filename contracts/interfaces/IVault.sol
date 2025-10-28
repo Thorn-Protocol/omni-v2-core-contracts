@@ -51,6 +51,7 @@ interface IVault is IERC4626 {
     event UpdateProfitMaxUnlockTime(uint256 profitMaxUnlockTime);
     event DebtPurchased(address indexed strategy, uint256 amount);
     event ManagementFeeMinted(address indexed feeRecipient, uint256 amount);
+    event VaultShutdowned();
 
     function mint(address receiver, uint256 assets) external;
 
@@ -70,13 +71,17 @@ interface IVault is IERC4626 {
         uint256 assets,
         address receiver
     ) external returns (uint256);
+
     function withdraw(
         uint256 shares,
         address receiver,
         address owner
     ) external returns (uint256);
+
     function maxDeposit(address receiver) external view returns (uint256);
+
     function maxWithdraw(address owner) external view returns (uint256);
+
     function maxWithdraw(
         address owner,
         uint256 maxLoss,

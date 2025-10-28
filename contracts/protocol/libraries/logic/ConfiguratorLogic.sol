@@ -11,6 +11,7 @@ import {ManagementFeeLogic} from "./internal/ManagementFeeLogic.sol";
 import {IStrategy} from "../../../interfaces/IStrategy.sol";
 import {IVault} from "../../../interfaces/IVault.sol";
 import {Constants} from "../Constants.sol";
+
 library ConfiguratorLogic {
     using ERC20Logic for DataTypes.VaultData;
 
@@ -127,6 +128,8 @@ library ConfiguratorLogic {
         uint256 depositLimit,
         bool force
     ) external {
+        require(!vault.isShutdown, "Vault already shutdown");
+
         if (force) {
             if (vault.depositLimitModule != address(0)) {
                 vault.depositLimitModule = address(0);
@@ -144,6 +147,7 @@ library ConfiguratorLogic {
         address newDepositLimitModule,
         bool force
     ) external {
+        require(!vault.isShutdown, "Vault already shutdown");
         if (force) {
             if (vault.depositLimit != type(uint256).max) {
                 vault.depositLimit = type(uint256).max;
@@ -222,5 +226,18 @@ library ConfiguratorLogic {
 
         vault.profitMaxUnlockTime = newProfitMaxUnlockTime;
         emit IVault.UpdateProfitMaxUnlockTime(newProfitMaxUnlockTime);
+    }
+
+    function ShutdownVault(DataTypes.VaultData storage vault) external {
+        require(!vault.isShutdown, "Vault already shutdown");
+        vault.isShutdown = true;
+        if (vault.depositLimitModule != address(0)) {
+            vault.depositLimitModule = address(0);
+            emit IVault.UpdateDepositLimitModule(address(0));
+        }
+        vault.depositLimit = 0;
+        emit IVault.UpdateDepositLimit(0);
+        // todo
+        emit IVault.VaultShutdowned();
     }
 }
