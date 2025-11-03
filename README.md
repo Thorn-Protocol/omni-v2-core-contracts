@@ -21,4 +21,4 @@ Strategies designed according to ERC4626 standard can be integrated directly int
 | --------------------- | ----------------- | ------------------------------------------ |
 | USDC V2 On Base Vault |                   | 0x2669DfA1D91c1dF9fe51DEAC6E5369C7D43242a8 |
 |                       | Wasabi Strategy   | 0x1C4a802FD6B591BB71dAA01D8335e43719048B24 |
-|                       | OffChain Strategy | 0xD2a9dB8f22707166e82EdF89534340237780eDA3 |
+|                       | OffChain Strategy | 0x00aa576bfa5f75BC6C651e8Cb587dD78b287040A |
