@@ -13,7 +13,7 @@ import {IVault} from "../../../../interfaces/IVault.sol";
 library ManagementFeeLogic {
     using ERC20Logic for DataTypes.VaultData;
 
-    function caculateManagementFee(
+    function calculateManagementFee(
         DataTypes.VaultData storage vault
     ) internal returns (uint256 feeShares) {
         feeShares = _calculateManagementFee(vault);

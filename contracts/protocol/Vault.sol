@@ -227,7 +227,7 @@ contract Vault is
         nonReentrant
         returns (uint256)
     {
-        ManagementFeeLogic.caculateManagementFee(vaultData);
+        ManagementFeeLogic.calculateManagementFee(vaultData);
         return super.deposit(assets, receiver);
     }
 
@@ -240,7 +240,7 @@ contract Vault is
         nonReentrant
         returns (uint256)
     {
-        ManagementFeeLogic.caculateManagementFee(vaultData);
+        ManagementFeeLogic.calculateManagementFee(vaultData);
         return super.mint(shares, receiver);
     }
 
@@ -269,7 +269,7 @@ contract Vault is
         nonReentrant
         returns (uint256)
     {
-        ManagementFeeLogic.caculateManagementFee(vaultData);
+        ManagementFeeLogic.calculateManagementFee(vaultData);
         uint256 assets = ERC4626Logic.convertToAssets(
             vaultData,
             shares,
@@ -298,7 +298,7 @@ contract Vault is
         nonReentrant
         returns (uint256)
     {
-        ManagementFeeLogic.caculateManagementFee(vaultData);
+        ManagementFeeLogic.calculateManagementFee(vaultData);
         uint256 shares = ERC4626Logic.convertToShares(
             vaultData,
             assets,
@@ -325,7 +325,7 @@ contract Vault is
         address owner,
         uint256 maxLoss
     ) external nonReentrant returns (uint256) {
-        ManagementFeeLogic.caculateManagementFee(vaultData);
+        ManagementFeeLogic.calculateManagementFee(vaultData);
         uint256 shares = ERC4626Logic.convertToShares(
             vaultData,
             assets,

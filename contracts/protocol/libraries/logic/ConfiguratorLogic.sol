@@ -192,7 +192,7 @@ library ConfiguratorLogic {
         DataTypes.VaultData storage vault,
         uint256 newManagementFee
     ) external {
-        ManagementFeeLogic.caculateManagementFee(vault);
+        ManagementFeeLogic.calculateManagementFee(vault);
         vault.managementFee = newManagementFee;
         emit IVault.UpdateManagementFee(newManagementFee);
     }
@@ -201,7 +201,7 @@ library ConfiguratorLogic {
         DataTypes.VaultData storage vault,
         address newFeeRecipient
     ) external {
-        ManagementFeeLogic.caculateManagementFee(vault);
+        ManagementFeeLogic.calculateManagementFee(vault);
         vault.feeRecipient = newFeeRecipient;
         emit IVault.UpdateFeeRecipient(newFeeRecipient);
     }
