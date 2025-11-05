@@ -49,11 +49,4 @@ contract OffChainStrategy is BaseStrategy {
         IERC20(asset()).transfer(agent, amount);
         totalIdle -= amount;
     }
-
-    function takeProfit(uint256 amount) public onlyAgent {
-        require(agent != address(0), "Agent not set");
-        require(amount > 0, "Invalid amount");
-        IERC20(asset()).transfer(agent, amount);
-        totalIdle += amount;
-    }
 }
